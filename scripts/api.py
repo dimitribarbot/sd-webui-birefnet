@@ -83,13 +83,14 @@ def get_model_using_cache(
         device: str,
         use_model_cache: bool):
 
-    global birefnet
+    global birefnet, birefnet_model_name
     if not use_model_cache:
         clear_model_cache()
         return init_birefnet(model_name, device)
     if not birefnet or not birefnet_model_name or birefnet_model_name != model_name:
         clear_model_cache()
         birefnet = init_birefnet(model_name, device)
+        birefnet_model_name = model_name
     return birefnet
 
 
