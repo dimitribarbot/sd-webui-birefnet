@@ -1,18 +1,18 @@
+import datetime
 import os
-import torch
-import base64
 from fastapi import FastAPI, Body
 from pydantic import BaseModel
-from typing import Any, Literal
+from typing import Any
 import gradio as gr
 from PIL import Image
 import numpy as np
-import safetensors.torch
 
-from birefnet.models.birefnet import BiRefNet
-from internal_birefnet.utils import ImagePreprocessor, download_birefnet_model, get_model_path
+from internal_birefnet.pipeline import BiRefNetModelName, BiRefNetPipeline
 from modules.api.api import encode_pil_to_base64, decode_base64_to_image
 from modules.devices import torch_gc
+
+
+birefnet: BiRefNetPipeline | None = None
 
 
 def decode_to_pil(image):
@@ -40,57 +40,20 @@ def encode_to_base64(image):
         Exception("Invalid type")
 
 
-birefnet: BiRefNet | None = None
-birefnet_model_name: str | None = None
-
 def clear_model_cache():
     global birefnet
     birefnet = None
     torch_gc()
 
 
-def get_device(device_id: int, flag_force_cpu: bool):
-    if flag_force_cpu:
-        device = "cpu"
-    else:
-        try:
-            if torch.backends.mps.is_available():
-                device = 'mps'
-            elif torch.cuda.is_available():
-                device = 'cuda:' + str(device_id)
-            else:
-                device = "cpu"
-        except:
-            device = "cpu"
-    return device
-
-
-def init_birefnet(model_name: Literal['General', 'General-Lite', 'Portrait', 'DIS', 'HRSOD', 'COD', 'DIS-TR_TEs'], device: str):
-    weight_path = get_model_path(model_name)
-    
-    state_dict = safetensors.torch.load_file(weight_path, device=device)
-
-    model = BiRefNet(bb_pretrained=False)
-    model.load_state_dict(state_dict)
-    model.to(device)
-    model.eval()
-
-    return model
-
-
-def get_model_using_cache(
-        model_name: Literal['General', 'General-Lite', 'Portrait', 'DIS', 'HRSOD', 'COD', 'DIS-TR_TEs'],
-        device: str,
-        use_model_cache: bool):
-
-    global birefnet, birefnet_model_name
+def get_pipeline_using_cache(model_name: BiRefNetModelName, device_id: int, flag_force_cpu: bool, use_model_cache: bool):
+    global birefnet
     if not use_model_cache:
         clear_model_cache()
-        return init_birefnet(model_name, device)
-    if not birefnet or not birefnet_model_name or birefnet_model_name != model_name:
+        return BiRefNetPipeline(model_name, device_id, flag_force_cpu)
+    if not birefnet or birefnet.model_name != model_name or birefnet.device_id != device_id or birefnet.flag_force_cpu != flag_force_cpu:
         clear_model_cache()
-        birefnet = init_birefnet(model_name, device)
-        birefnet_model_name = model_name
+        birefnet = BiRefNetPipeline(model_name, device_id, flag_force_cpu)
     return birefnet
 
 
@@ -99,18 +62,18 @@ def is_file(input):
 
 
 def get_output_path(output_dir):
+    today = f"{datetime.date.today()}"
     if os.path.isabs(output_dir):
-        return output_dir
+        return os.path.join(output_dir, today)
     from modules.paths_internal import data_path
-    return os.path.join(data_path, output_dir)
+    return os.path.join(data_path, output_dir, today)
 
 
 def birefnet_api(_: gr.Blocks, app: FastAPI):
-
     class BiRefNetRequest(BaseModel):
         image: str = ""
         resolution: str = ""
-        model_name: Literal['General', 'General-Lite', 'Portrait', 'DIS', 'HRSOD', 'COD', 'DIS-TR_TEs']
+        model_name: BiRefNetModelName
         output_dir: str = 'outputs/birefnet/'  # directory to save output image
         device_id: int = 0  # gpu device id
         send_output: bool = True
@@ -118,54 +81,23 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
         use_model_cache: bool = True
         flag_force_cpu: bool = False
 
-    def fast_check_birefnet_args(payload: BiRefNetRequest):
-        if not payload.image:
-            raise ValueError("Input image is not optional")
 
     @app.post("/birefnet/single")
     async def execute_birefnet_single(payload: BiRefNetRequest = Body(...)) -> Any:
         print("BiRefNet API /birefnet/single received request")
 
-        fast_check_birefnet_args(payload)
+        image = decode_to_pil(payload.image)
+        if image is None:
+            raise ValueError("Input image is not optional")
 
-        download_birefnet_model(payload.model_name)
-
-        image = decode_to_pil(payload.image).convert("RGBA")
-
-        resolution = f"{image.width}x{image.height}" if payload.resolution == '' else payload.resolution
-        resolution = [int(int(reso)//32*32) for reso in resolution.strip().split('x')]
-
-        image_shape = image.size[::-1]
-        image_pil = image.resize(tuple(resolution))
-
-        image_preprocessor = ImagePreprocessor(resolution=tuple(resolution))
-        image_proc = image_preprocessor.proc(image_pil)
-        image_proc = image_proc.unsqueeze(0)
-
-        device = get_device(payload.device_id, payload.flag_force_cpu)
-
-        birefnet = get_model_using_cache(
+        birefnet = get_pipeline_using_cache(
             payload.model_name,
-            device,
+            payload.device_id,
+            payload.flag_force_cpu,
             payload.use_model_cache
         )
-
-        with torch.no_grad():
-            scaled_pred_tensor = birefnet(image_proc.to(device))[-1].sigmoid()
-
-        if device.startswith('cuda'):
-            scaled_pred_tensor = scaled_pred_tensor.cpu()
-
-        pred = torch.nn.functional.interpolate(scaled_pred_tensor, size=image_shape, mode='bilinear', align_corners=True).squeeze().numpy()
-
-        pred_rgba = np.zeros((*pred.shape, 4), dtype=np.uint8)
-        pred_rgba[..., :3] = (pred[..., np.newaxis] * 255).astype(np.uint8)
-        pred_rgba[..., 3] = (pred * 255).astype(np.uint8)
-
-        image_array = np.array(image)
-        image_pred = image_array * (pred_rgba / 255.0)
         
-        output_image = Image.fromarray(image_pred.astype(np.uint8), 'RGBA')
+        output_image = birefnet.process(image, payload.resolution)
 
         if payload.save_output:
             output_folder = get_output_path(payload.output_dir)

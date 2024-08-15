@@ -1,9 +1,5 @@
 import os
-import torch
-from typing import Literal, Tuple
-
-from PIL import Image
-from torchvision import transforms
+from typing import Literal
 
 from modules.modelloader import load_file_from_url
 try:
@@ -24,19 +20,6 @@ usage_to_weights_file = {
     'COD': 'BiRefNet-COD',
     'DIS-TR_TEs': 'BiRefNet-DIS5K-TR_TEs'
 }
-
-
-class ImagePreprocessor():
-    def __init__(self, resolution: Tuple[int, int] = (1024, 1024)) -> None:
-        self.transform_image = transforms.Compose([
-            # transforms.Resize(resolution),    # 1. keep consistent with the cv2.resize used in training 2. redundant with that in path_to_image()
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-        ])
-
-    def proc(self, image: Image.Image) -> torch.Tensor:
-        image = self.transform_image(image.convert('RGB'))
-        return image
     
 
 def get_model_path(model_name: Literal['General', 'General-Lite', 'Portrait', 'DIS', 'HRSOD', 'COD', 'DIS-TR_TEs']):
