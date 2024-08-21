@@ -42,7 +42,7 @@ Both endpoints share these parameters:
 - `device_id`: GPU device id.
 - `send_output`: `true` if you want output images to be sent as base64 encoded strings, `false` otherwise.
 - `save_output`: `true` if you want output images to be saved in `output_dir`, `false` otherwise.
-- `use_model_cache`: `true` if you want live portrait and face detector models to be cached for subsequent calls using same models, `false` otherwise.
+- `use_model_cache`: `true` if you want birefnet model to be cached for subsequent calls using same model name, `false` otherwise.
 - `flag_force_cpu`: force cpu inference.
 
 Additional parameters for the `/birefnet/single` endpoint are:
