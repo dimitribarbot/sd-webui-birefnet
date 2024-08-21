@@ -69,11 +69,64 @@ def get_output_path(output_dir):
     return os.path.join(data_path, output_dir, today)
 
 
+def save_image_file(image: Image.Image, folder: str, base_filename: str):
+    output_path = os.path.join(folder, f"{base_filename}.png")
+
+    counter = 1
+    while os.path.exists(output_path):
+        output_path = os.path.join(folder, f"{base_filename}_{counter}.png")
+        counter += 1
+    image.save(output_path)
+
+
+def process_image(
+        birefnet: BiRefNetPipeline,
+        image_input: str,
+        resolution: str,
+        return_foreground: bool,
+        return_edge_mask: bool,
+        edge_mask_width: int,
+        output_dir: str,
+        save_output: bool,
+        send_output: bool,
+        default_output_filename: str
+):
+    image = decode_to_pil(image_input)
+    if image is None:
+        raise ValueError("Input image is not optional")
+
+    mask, output_image, edge_mask = birefnet.process(image, resolution, return_foreground, return_edge_mask, edge_mask_width)
+
+    if save_output:
+        output_folder = get_output_path(output_dir)
+        os.makedirs(output_folder, exist_ok=True)
+        input_file_name = os.path.splitext(os.path.basename(image_input))[0] if is_file(image_input) else default_output_filename
+        save_image_file(mask, output_folder, f"{input_file_name}-foreground-mask")
+        if output_image:
+            save_image_file(output_image, output_folder, f"{input_file_name}-foreground")
+        if edge_mask:
+            save_image_file(edge_mask, output_folder, f"{input_file_name}-foreground-edge-mask")
+
+    if send_output:
+        mask_base64 = encode_to_base64(mask)
+        output_image_base64 = encode_to_base64(output_image) if output_image else None
+        edge_mask_base64 = encode_to_base64(edge_mask) if edge_mask else None
+    else:
+        mask_base64 = None
+        output_image_base64 = None
+        edge_mask_base64 = None
+
+    return mask_base64, output_image_base64, edge_mask_base64
+
+
 def birefnet_api(_: gr.Blocks, app: FastAPI):
-    class BiRefNetRequest(BaseModel):
+    class BiRefNetSingleRequest(BaseModel):
         image: str = ""
         resolution: str = ""
         model_name: BiRefNetModelName
+        return_foreground: bool = True
+        return_edge_mask: bool = True
+        edge_mask_width: int = 64
         output_dir: str = 'outputs/birefnet/'  # directory to save output image
         device_id: int = 0  # gpu device id
         send_output: bool = True
@@ -83,12 +136,8 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
 
 
     @app.post("/birefnet/single")
-    async def execute_birefnet_single(payload: BiRefNetRequest = Body(...)) -> Any:
+    async def execute_birefnet_single(payload: BiRefNetSingleRequest = Body(...)) -> Any:
         print("BiRefNet API /birefnet/single received request")
-
-        image = decode_to_pil(payload.image)
-        if image is None:
-            raise ValueError("Input image is not optional")
 
         birefnet = get_pipeline_using_cache(
             payload.model_name,
@@ -96,24 +145,85 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
             payload.flag_force_cpu,
             payload.use_model_cache
         )
-        
-        output_image = birefnet.process(image, payload.resolution)
 
-        if payload.save_output:
-            output_folder = get_output_path(payload.output_dir)
-            os.makedirs(output_folder, exist_ok=True)
-            input_file_name = os.path.splitext(os.path.basename(payload.image))[0] if is_file(payload.image) else "output"
-            output_path = os.path.join(output_folder, f"{input_file_name}_no_background.png")
-            output_image.save(output_path)
-
-        if payload.send_output:
-            output_image_base64 = encode_to_base64(output_image)
-        else:
-            output_image_base64 = None
+        mask_base64, output_image_base64, edge_mask_base64 = process_image(
+            birefnet,
+            payload.image,
+            payload.resolution,
+            payload.return_foreground,
+            payload.return_edge_mask,
+            payload.edge_mask_width,
+            payload.output_dir,
+            payload.save_output,
+            payload.send_output,
+            "output"
+        )
         
         print("BiRefNet API /birefnet/single finished")
 
-        return {"output_image": output_image_base64}
+        return {"mask": mask_base64, "output_image": output_image_base64, "edge_mask": edge_mask_base64}
+    
+
+    class BiRefNetInput(BaseModel):
+        image: str = ""
+        resolution: str = ""
+    
+
+    class BiRefNetMultiRequest(BaseModel):
+        inputs: list[BiRefNetInput]
+        model_name: BiRefNetModelName
+        return_foreground: bool = True
+        return_edge_mask: bool = True
+        edge_mask_width: int = 64
+        output_dir: str = 'outputs/birefnet/'  # directory to save output image
+        device_id: int = 0  # gpu device id
+        send_output: bool = True
+        save_output: bool = False
+        use_model_cache: bool = True
+        flag_force_cpu: bool = False
+
+    @app.post("/birefnet/multi")
+    async def execute_birefnet_multi(payload: BiRefNetMultiRequest = Body(...)) -> Any:
+        print("BiRefNet API /birefnet/multi received request")
+
+        if payload.inputs is None or len(payload.inputs) == 0:
+            raise ValueError("Input images are not optional")
+        
+        birefnet = get_pipeline_using_cache(
+            payload.model_name,
+            payload.device_id,
+            payload.flag_force_cpu,
+            payload.use_model_cache
+        )
+
+        count = 1
+        outputs = []
+        for input in payload.inputs:
+            try:
+                mask_base64, output_image_base64, edge_mask_base64 = process_image(
+                    birefnet,
+                    input.image,
+                    input.resolution,
+                    payload.return_foreground,
+                    payload.return_edge_mask,
+                    payload.edge_mask_width,
+                    payload.output_dir,
+                    payload.save_output,
+                    payload.send_output,
+                    f"output_{count}"
+                )
+
+                if mask_base64:
+                    outputs.append({"mask": mask_base64, "output_image": output_image_base64, "edge_mask": edge_mask_base64})
+                
+                count += 1                
+            except Exception as e:
+                print(f"Error processing image {count}: {str(e)}")
+                continue
+        
+        print("BiRefNet API /birefnet/multi finished")
+
+        return {"outputs": outputs}
 
         
 try:

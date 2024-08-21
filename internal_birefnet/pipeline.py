@@ -4,6 +4,7 @@ import torch
 from typing import cast, Literal
 from PIL import Image
 from torchvision import transforms
+from scipy.ndimage import binary_dilation, binary_erosion
 import numpy as np
 import safetensors.torch
 
@@ -98,14 +99,35 @@ class BiRefNetPipeline(object):
         self.birefnet.to(self.device)
         self.birefnet.eval()
 
+
+    def dilate_mask(self, mask, dilation_amt: int):
+        dilation_amt_abs = abs(dilation_amt)
+        x, y = np.meshgrid(np.arange(dilation_amt_abs), np.arange(dilation_amt_abs))
+        center = dilation_amt_abs // 2
+        if dilation_amt < 0:
+            dilation_kernel = ((x - center)**2 + (y - center)**2 <= center**2).astype(np.uint8)
+            dilated_binary_img = binary_erosion(mask, dilation_kernel)
+        else:
+            dilation_kernel = ((x - center)**2 + (y - center)**2 <= center**2).astype(np.uint8)
+            dilated_binary_img = binary_dilation(mask, dilation_kernel)
+        return cast(np.ndarray, dilated_binary_img)
     
-    def process(self, image: Image.Image, resolution=''):
-        resolution = f"{image.width}x{image.height}" if resolution == '' else resolution
-        resolution = [int(int(reso)//32*32) for reso in resolution.strip().split('x')]
-        resolution = cast(tuple[int, int], tuple(resolution))
+
+    def get_edge_mask(self, mask: Image.Image, mask_width: int):
+        dilation_amt = mask_width // 2
+        dilate_binary_img = self.dilate_mask(mask, dilation_amt)
+        erode_binary_img = self.dilate_mask(mask, -dilation_amt)
+        binary_img = dilate_binary_img ^ erode_binary_img
+        return Image.fromarray(binary_img.astype(np.uint8) * 255)
+
+    
+    def process(self, image: Image.Image, resolution: str, return_foreground: bool, return_edge_mask: bool, edge_mask_width):
+        image_resolution = f"{image.width}x{image.height}" if resolution == '' else resolution
+        image_resolution = [int(int(reso)//32*32) for reso in image_resolution.strip().split('x')]
+        image_resolution = cast(tuple[int, int], tuple(image_resolution))
 
         image_shape = image.size[::-1]
-        image_pil = image.resize(resolution)
+        image_pil = image.resize(image_resolution)
 
         image_preprocessor = ImagePreprocessor()
         image_proc = image_preprocessor.proc(image_pil)
@@ -117,13 +139,15 @@ class BiRefNetPipeline(object):
         pred = torch.nn.functional.interpolate(scaled_pred_tensor, size=image_shape, mode='bilinear', align_corners=True).squeeze()
         pred = pred.cpu().numpy()
 
-        pred_rgba = np.zeros((*pred.shape, 4), dtype=np.uint8)
-        pred_rgba[..., :3] = (pred[..., np.newaxis] * 255).astype(np.uint8)
-        pred_rgba[..., 3] = (pred * 255).astype(np.uint8)
+        mask = Image.fromarray((pred * 255).astype("uint8"), mode="L")
+        if return_foreground:
+            output_image = image.copy()
+            output_image.putalpha(mask)
+        else:
+            output_image = None
+        if return_edge_mask:
+            edge_mask = self.get_edge_mask(mask, edge_mask_width)
+        else:
+            edge_mask = None
 
-        image_array = np.array(image.convert("RGBA"))
-        image_pred = image_array * (pred_rgba / 255.0)
-        
-        output_image = Image.fromarray(image_pred.astype(np.uint8), 'RGBA')
-
-        return output_image
+        return mask, output_image, edge_mask
