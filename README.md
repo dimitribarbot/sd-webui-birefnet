@@ -1,4 +1,4 @@
-# sd-webui-birefnet
+# BiRefNet background removal for Stable Diffusion WebUI
 
 This extension is for AUTOMATIC1111's [Stable Diffusion web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui), it allows to add a BiRefNet section to the original Stable Diffusion WebUI's Extras tab to benefit from [BiRefNet](https://github.com/ZhengPeng7/BiRefNet) background removal feature.
 
