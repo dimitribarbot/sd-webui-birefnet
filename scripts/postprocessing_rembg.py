@@ -38,7 +38,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
         with ui_components.InputAccordion(False, label="Remove background with BiRefNet") as enable:
             with FormRow():
                 model = gr.Dropdown(label="Remove background model", choices=models, value="None", info="Choose a BiRefNet model. Each model gives a different result.")
-                resolution = gr.Textbox(label="Resolution", value="", placeholder="1024x1024", info="If left empty, it will take image size rounded to the nearest multiple of 32")
+                resolution = gr.Textbox(label="Resolution", value="", placeholder="1024x1024", info="If left empty, it will take image size rounded to the nearest multiple of 32.")
                 return_foreground = gr.Checkbox(label="Return foreground", value=False)
                 return_edge_mask = gr.Checkbox(label="Return edge mask", value=False)
 
