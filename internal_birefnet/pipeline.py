@@ -32,7 +32,7 @@ usage_to_weights_file = {
 
 BiRefNetModelName = Literal['General', 'General-Lite', 'Portrait', 'DIS', 'HRSOD', 'COD', 'DIS-TR_TEs']
 
-def get_model_path(model_name: Literal['General', 'General-Lite', 'Portrait', 'DIS', 'HRSOD', 'COD', 'DIS-TR_TEs']):
+def get_model_path(model_name: BiRefNetModelName):
     return os.path.join(models_path, "birefnet", f"{model_name}.safetensors")
 
 
@@ -46,7 +46,7 @@ def download_models(model_root, model_urls):
             load_file_from_url(url, model_dir=model_root, file_name=local_file)
 
 
-def download_birefnet_model(model_name: Literal['General', 'General-Lite', 'Portrait', 'DIS', 'HRSOD', 'COD', 'DIS-TR_TEs']):
+def download_birefnet_model(model_name: BiRefNetModelName):
     """
     Downloading birefnet model from huggingface.
     """
@@ -94,7 +94,9 @@ class BiRefNetPipeline(object):
         
         state_dict = safetensors.torch.load_file(weight_path, device=self.device)
 
-        self.birefnet = BiRefNet(bb_pretrained=False)
+        bb_index = 3 if model_name == "General-Lite" else 6
+
+        self.birefnet = BiRefNet(bb_pretrained=False, bb_index=bb_index)
         self.birefnet.load_state_dict(state_dict)
         self.birefnet.to(self.device)
         self.birefnet.eval()

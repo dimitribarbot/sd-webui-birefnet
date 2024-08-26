@@ -15,9 +15,9 @@ from birefnet.models.refinement.stem_layer import StemLayer
 
 
 class BiRefNet(nn.Module):
-    def __init__(self, bb_pretrained=True):
+    def __init__(self, bb_pretrained=True, bb_index=6):
         super(BiRefNet, self).__init__()
-        self.config = Config()
+        self.config = Config(bb_index)
         self.epoch = 1
         self.bb = build_backbone(self.config.bb, pretrained=bb_pretrained)
 
