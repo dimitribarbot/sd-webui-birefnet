@@ -29,7 +29,7 @@ If necessary, they can be downloaded from:
 - [DIS-TR_TEs](https://huggingface.co/ZhengPeng7/BiRefNet-DIS5K-TR_TEs/resolve/main/model.safetensors) ➔ `model.safetensors` must be renamed `DIS-TR_TEs.safetensors`
 
 ## API
-Routes have been added to the Automatic1111 API:
+Routes have been added to the Automatic1111's SD WebUI API:
 - `/birefnet/single`: remove background of a single image.
 - `/birefnet/multi`: remove background of a multiple images.
 
