@@ -8,6 +8,7 @@ from scipy.ndimage import binary_dilation, binary_erosion
 import numpy as np
 import safetensors.torch
 
+from birefnet.image_proc import refine_foreground
 from birefnet.models.birefnet import BiRefNet
 
 from modules.modelloader import load_file_from_url
@@ -128,7 +129,6 @@ class BiRefNetPipeline(object):
         image_resolution = [int(int(reso)//32*32) for reso in image_resolution.strip().split('x')]
         image_resolution = cast(tuple[int, int], tuple(image_resolution))
 
-        image_shape = image.size[::-1]
         image_pil = image.resize(image_resolution)
 
         image_preprocessor = ImagePreprocessor()
@@ -138,12 +138,12 @@ class BiRefNetPipeline(object):
         with torch.no_grad():
             scaled_pred_tensor = self.birefnet(image_proc.to(self.device))[-1].sigmoid()
 
-        pred = torch.nn.functional.interpolate(scaled_pred_tensor, size=image_shape, mode='bilinear', align_corners=True).squeeze()
-        pred = pred.cpu().numpy()
+        pred = scaled_pred_tensor[0].squeeze().cpu()
 
-        mask = Image.fromarray((pred * 255).astype("uint8"), mode="L")
+        mask = transforms.ToPILImage()(pred).resize(image.size)
+
         if return_foreground:
-            output_image = image.copy()
+            output_image = refine_foreground(image, mask)
             output_image.putalpha(mask)
         else:
             output_image = None
