@@ -5,7 +5,7 @@ from PIL import Image
 from torch.utils import data
 from torchvision import transforms
 
-from birefnet.preproc import preproc
+from birefnet.image_proc import preproc
 from birefnet.config import Config
 from birefnet.utils import path_to_image
 

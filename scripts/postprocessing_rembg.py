@@ -77,9 +77,9 @@ class ScriptPostprocessingBiRefNet(scripts_postprocessing.ScriptPostprocessing):
             edge_mask_width=edge_mask_width
         )
 
-        pp.image = mask
+        pp.image = output_image or mask
         if output_image:
-            pp.extra_images.append(output_image)
+            pp.extra_images.append(mask)
         if edge_mask:
             pp.extra_images.append(edge_mask)
 
