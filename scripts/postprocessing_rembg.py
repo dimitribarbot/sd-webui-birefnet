@@ -29,7 +29,7 @@ def get_pipeline_using_cache(model_name: BiRefNetModelName):
     return birefnet
 
 
-class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
+class ScriptPostprocessingBiRefNet(scripts_postprocessing.ScriptPostprocessing):
     name = "BiRefNet"
     order = 20001
     model = None
@@ -77,9 +77,9 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
             edge_mask_width=edge_mask_width
         )
 
-        pp.image = output_image
-        if mask:
-            pp.extra_images.append(mask)
+        pp.image = mask
+        if output_image:
+            pp.extra_images.append(output_image)
         if edge_mask:
             pp.extra_images.append(edge_mask)
 
