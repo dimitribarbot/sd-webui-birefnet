@@ -6,10 +6,9 @@ from kornia.filters import laplacian
 from birefnet.config import Config
 from birefnet.dataset import class_labels_TR_sorted
 from birefnet.models.backbones.build_backbone import build_backbone
-from birefnet.models.modules.decoder_blocks import BasicDecBlk, ResBlk, HierarAttDecBlk
+from birefnet.models.modules.decoder_blocks import BasicDecBlk, ResBlk
 from birefnet.models.modules.lateral_blocks import BasicLatBlk
 from birefnet.models.modules.aspp import ASPP, ASPPDeformable
-from birefnet.models.modules.ing import *
 from birefnet.models.refinement.refiner import Refiner, RefinerPVTInChannels4, RefUNet
 from birefnet.models.refinement.stem_layer import StemLayer
 
