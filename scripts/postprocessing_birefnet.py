@@ -1,7 +1,6 @@
-from modules import scripts_postprocessing
+from modules import scripts_postprocessing, ui_components
 import gradio as gr
 
-from modules.ui_components import FormRow, InputAccordion
 from modules.devices import torch_gc
 
 from internal_birefnet.pipeline import BiRefNetPipeline, BiRefNetModelName
@@ -35,18 +34,18 @@ class ScriptPostprocessingBiRefNet(scripts_postprocessing.ScriptPostprocessing):
     model = None
 
     def ui(self):
-        with InputAccordion(False, label="Remove background with BiRefNet") as enable:
-            with FormRow():
+        with ui_components.InputAccordion(False, label="Remove background with BiRefNet") as enable:
+            with ui_components.FormRow():
                 model = gr.Dropdown(label="Remove background model", choices=models, value="None", info="Choose a BiRefNet model. Each model gives a different result.")
                 resolution = gr.Textbox(label="Resolution", value="", placeholder="1024x1024", info="If left empty, it will take image size rounded to the nearest multiple of 32.")
 
-            with FormRow():
+            with ui_components.FormRow():
                 return_original = gr.Checkbox(label="Return original image")
                 return_foreground = gr.Checkbox(True, label="Return foreground")
                 return_mask = gr.Checkbox(label="Return mask")
                 return_edge_mask = gr.Checkbox(label="Return edge mask")
 
-            with FormRow(visible=False) as edge_mask_row:
+            with ui_components.FormRow(visible=False) as edge_mask_row:
                 edge_mask_width = gr.Slider(label="Edge mask width", minimum=1, maximum=256, step=1, value=64)
 
             return_edge_mask.change(
