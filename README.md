@@ -17,6 +17,16 @@ Find the UI for BiRefNet background removal in the Extras tab after installing t
 
 ## Models
 
+The available models are:
+
+- General: A pre-trained model for general use cases.
+- General-Lite: A light pre-trained model for general use cases.
+- Portrait: A pre-trained model for human portraits.
+- DIS: A pre-trained model for dichotomous image segmentation (DIS).
+- HRSOD: A pre-trained model for high-resolution salient object detection (HRSOD).
+- COD: A pre-trained model for concealed object detection (COD).
+- DIS-TR_TEs: A pre-trained model with massive dataset.
+
 Model files go here (automatically downloaded if the folder is not present during first run): `stable-diffusion-webui/models/birefnet`.  
 
 If necessary, they can be downloaded from:
