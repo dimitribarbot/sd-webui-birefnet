@@ -124,7 +124,10 @@ class BiRefNetPipeline(object):
         return Image.fromarray(binary_img.astype(np.uint8) * 255)
 
     
-    def process(self, image: Image.Image, resolution: str, return_foreground: bool, return_edge_mask: bool, edge_mask_width):
+    def process(self, image: Image.Image, resolution: str, return_mask: bool, return_foreground: bool, return_edge_mask: bool, edge_mask_width):
+        if not return_mask and not return_foreground and not return_edge_mask:
+            return None, None, None
+        
         image_resolution = f"{image.width}x{image.height}" if resolution == '' else resolution
         image_resolution = [int(int(reso)//32*32) for reso in image_resolution.strip().split('x')]
         image_resolution = cast(tuple[int, int], tuple(image_resolution))
@@ -143,13 +146,16 @@ class BiRefNetPipeline(object):
         mask = transforms.ToPILImage()(pred).resize(image.size)
 
         if return_foreground:
-            output_image = refine_foreground(image, mask)
-            output_image.putalpha(mask)
+            foreground = refine_foreground(image, mask)
+            foreground.putalpha(mask)
         else:
-            output_image = None
+            foreground = None
         if return_edge_mask:
             edge_mask = self.get_edge_mask(mask, edge_mask_width)
         else:
             edge_mask = None
 
-        return mask, output_image, edge_mask
+        if not return_mask:
+            mask = None
+
+        return mask, foreground, edge_mask
