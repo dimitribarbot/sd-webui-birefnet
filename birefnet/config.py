@@ -1,24 +1,25 @@
 import os
 import math
 
-CUR_DIR = os.path.dirname(__file__)
 
 class Config():
     def __init__(self, bb_index: int = 6) -> None:
-        # PATH settings
+              # PATH settings
         # Make up your file system as: SYS_HOME_DIR/codes/dis/BiRefNet, SYS_HOME_DIR/datasets/dis/xx, SYS_HOME_DIR/weights/xx
-        # if os.name == 'nt': 
-        #     self.sys_home_dir = os.environ['USERPROFILE'] # For windows system
-        # else:
-        #     self.sys_home_dir = os.environ['HOME'] # For Linux system
+        if os.name == 'nt': 
+            self.sys_home_dir = os.environ['USERPROFILE'] # For windows system
+        else:
+            self.sys_home_dir = [os.environ['HOME'], '/mnt/data'][1] # For Linux system
+        self.data_root_dir = os.path.join(self.sys_home_dir, 'datasets/dis')
 
         # TASK settings
-        self.task = ['DIS5K', 'COD', 'HRSOD', 'General', 'Matting'][0]
+        self.task = ['DIS5K', 'COD', 'HRSOD', 'General', 'General-2K', 'Matting'][0]
         self.training_set = {
             'DIS5K': ['DIS-TR', 'DIS-TR+DIS-TE1+DIS-TE2+DIS-TE3+DIS-TE4'][0],
             'COD': 'TR-COD10K+TR-CAMO',
             'HRSOD': ['TR-DUTS', 'TR-HRSOD', 'TR-UHRSD', 'TR-DUTS+TR-HRSOD', 'TR-DUTS+TR-UHRSD', 'TR-HRSOD+TR-UHRSD', 'TR-DUTS+TR-HRSOD+TR-UHRSD'][5],
-            'General': 'DIS-TE1+DIS-TE2+DIS-TE3+DIS-TE4+DIS-TR+TR-HRSOD+TE-HRSOD+TR-HRS10K+TE-HRS10K+TR-UHRSD+TE-UHRSD+TR-P3M-10k+TE-P3M-500-NP+TE-P3M-500-P+TR-humans',    # leave DIS-VD for evaluation.
+            'General': 'DIS-TE1+DIS-TE2+DIS-TE3+DIS-TE4+DIS-TR+TR-HRSOD+TE-HRSOD+TR-HRS10K+TE-HRS10K+TR-UHRSD+TE-UHRSD+TR-P3M-10k+TE-P3M-500-NP+TE-P3M-500-P+TR-humans+DIS-VD-ori',    # '+'.join([ds for ds in os.listdir(os.path.join(self.data_root_dir, self.task)) if ds not in ['DIS-VD']]),    # leave DIS-VD for evaluation.
+            'General-2K': 'DIS-TE1+DIS-TE2+DIS-TE3+DIS-TE4+DIS-TR+TR-HRSOD+TE-HRSOD+TR-HRS10K+TE-HRS10K+TR-UHRSD+TE-UHRSD+TR-P3M-10k+TE-P3M-500-NP+TE-P3M-500-P+TR-humans',    # '+'.join([ds for ds in os.listdir(os.path.join(self.data_root_dir, self.task)) if ds not in ['DIS-VD', 'DIS-VD-ori']]),
             'Matting': 'TR-P3M-10k+TE-P3M-500-NP+TR-humans+TR-Distrinctions-646',
         }[self.task]
         self.prompt4loc = ['dense', 'sparse'][0]
@@ -52,11 +53,12 @@ class Config():
                 'COD': -20,
                 'HRSOD': -20,
                 'General': -20,
+                'General-2K': -20,
                 'Matting': -20,
             }[self.task]
         ][1]    # choose 0 to skip
         self.lr = (1e-4 if 'DIS5K' in self.task else 1e-5) * math.sqrt(self.batch_size / 4)     # DIS needs high lr to converge faster. Adapt the lr linearly
-        self.size = 1024
+        self.size = (1024, 1024) if self.task not in ['General-2K'] else (2560, 1440)   # wid, hei
         self.num_workers = max(4, self.batch_size)          # will be decrease to min(it, batch_size) at the initialization of the data_loader
 
         # Backbone settings
@@ -136,9 +138,8 @@ class Config():
         self.lambda_adv_d = 3. * (self.lambda_adv_g > 0)
 
         # PATH settings - inactive
-        # self.data_root_dir = os.path.join(self.sys_home_dir, 'datasets/dis')
         # self.weights_root_dir = os.path.join(self.sys_home_dir, 'weights/cv')
-        # self.weights = {
+        self.weights = {}    # self.weights = {
         #     'pvt_v2_b2': os.path.join(self.weights_root_dir, 'pvt_v2_b2.pth'),
         #     'pvt_v2_b5': os.path.join(self.weights_root_dir, ['pvt_v2_b5.pth', 'pvt_v2_b5_22k.pth'][0]),
         #     'swin_v1_b': os.path.join(self.weights_root_dir, ['swin_base_patch4_window12_384_22kto1k.pth', 'swin_base_patch4_window12_384_22k.pth'][0]),
@@ -148,7 +149,6 @@ class Config():
         #     'pvt_v2_b0': os.path.join(self.weights_root_dir, ['pvt_v2_b0.pth'][0]),
         #     'pvt_v2_b1': os.path.join(self.weights_root_dir, ['pvt_v2_b1.pth'][0]),
         # }
-        self.weights = {}
 
         # Callbacks - inactive
         self.verbose_eval = True
@@ -160,9 +160,9 @@ class Config():
 
         self.batch_size_valid = 1
         self.rand_seed = 7
-        # run_sh_file = [f for f in os.listdir(CUR_DIR) if 'train.sh' == f] + [os.path.join(CUR_DIR, '..', f) for f in os.listdir('..') if 'train.sh' == f]
+        # run_sh_file = [f for f in os.listdir('.') if 'train.sh' == f] + [os.path.join('..', f) for f in os.listdir('..') if 'train.sh' == f]
         # if run_sh_file:
-        # with open(run_sh_file[0], 'r') as f:
+        #     with open(run_sh_file[0], 'r') as f:
         #         lines = f.readlines()
         #         self.save_last = int([l.strip() for l in lines if '"{}")'.format(self.task) in l and 'val_last=' in l][0].split('val_last=')[-1].split()[0])
         #         self.save_step = int([l.strip() for l in lines if '"{}")'.format(self.task) in l and 'step=' in l][0].split('step=')[-1].split()[0])
