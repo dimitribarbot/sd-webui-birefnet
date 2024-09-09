@@ -124,7 +124,7 @@ class BiRefNetPipeline(object):
         return Image.fromarray(binary_img.astype(np.uint8) * 255)
 
     
-    def process(self, image: Image.Image, resolution: str, return_mask: bool, return_foreground: bool, return_edge_mask: bool, edge_mask_width):
+    def process(self, image: Image.Image, resolution: str, return_mask: bool, return_foreground: bool, return_edge_mask: bool, edge_mask_width: int):
         if not return_mask and not return_foreground and not return_edge_mask:
             return None, None, None
         

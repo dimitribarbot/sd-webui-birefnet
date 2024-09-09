@@ -45,6 +45,7 @@ Routes have been added to the Automatic1111's SD WebUI API:
 
 Both endpoints share these parameters:
 - `return_foreground`: whether to return foreground image (input image without its background).
+- `return_mask`: whether to return mask (can be used for inpainting).
 - `return_edge_mask`: whether to return edge mask (can be used to blend foreground image with another background).
 - `edge_mask_width`: edge mask width in pixels. Default to 64.
 - `model_name`: `General`, `General-Lite`, `Portrait`, `DIS`, `HRSOD`, `COD` or `DIS-TR_TEs`. BiRefNet model to be used. Default to `General`.
