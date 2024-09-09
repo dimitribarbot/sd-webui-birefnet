@@ -1,43 +1,43 @@
 import datetime
+from typing import Any, Optional
 import os
+
 from fastapi import FastAPI, Body
 from pydantic import BaseModel
-from typing import Any
 import gradio as gr
 from PIL import Image
 import numpy as np
 
-from internal_birefnet.pipeline import BiRefNetModelName, BiRefNetPipeline
 from modules.api.api import encode_pil_to_base64, decode_base64_to_image
 from modules.devices import torch_gc
 
+from internal_birefnet.pipeline import BiRefNetModelName, BiRefNetPipeline
 
-birefnet: BiRefNetPipeline | None = None
+
+birefnet: Optional[BiRefNetPipeline] = None
 
 
 def decode_to_pil(image):
     if os.path.exists(image):
         return Image.open(image)
-    elif type(image) is str:
+    if isinstance(image, str):
         return decode_base64_to_image(image)
-    elif type(image) is Image.Image:
+    if isinstance(image, Image.Image):
         return image
-    elif type(image) is np.ndarray:
+    if isinstance(image, np.ndarray):
         return Image.fromarray(image)
-    else:
-        Exception("Not an image")
+    raise Exception("Not an image")
 
 
 def encode_to_base64(image):
-    if type(image) is str:
+    if isinstance(image, str):
         return image
-    elif type(image) is Image.Image:
+    if isinstance(image, Image.Image):
         return encode_pil_to_base64(image).decode()
-    elif type(image) is np.ndarray:
+    if isinstance(image, np.ndarray):
         pil = Image.fromarray(image)
         return encode_pil_to_base64(pil).decode()
-    else:
-        Exception("Invalid type")
+    raise Exception("Invalid type")
 
 
 def clear_model_cache():
@@ -46,19 +46,32 @@ def clear_model_cache():
     torch_gc()
 
 
-def get_pipeline_using_cache(model_name: BiRefNetModelName, device_id: int, flag_force_cpu: bool, use_model_cache: bool):
+def get_pipeline_using_cache(
+    model_name: BiRefNetModelName,
+    device_id: int,
+    flag_force_cpu: bool,
+    use_model_cache: bool,
+):
     global birefnet
     if not use_model_cache:
         clear_model_cache()
         return BiRefNetPipeline(model_name, device_id, flag_force_cpu)
-    if not birefnet or birefnet.model_name != model_name or birefnet.device_id != device_id or birefnet.flag_force_cpu != flag_force_cpu:
+    if (
+        not birefnet
+        or birefnet.model_name != model_name
+        or birefnet.device_id != device_id
+        or birefnet.flag_force_cpu != flag_force_cpu
+    ):
         clear_model_cache()
         birefnet = BiRefNetPipeline(model_name, device_id, flag_force_cpu)
     return birefnet
 
 
-def is_file(input):
-    return os.path.exists(input) or (type(input) is str and (input.startswith("http://") or input.startswith("https://")))
+def is_file(input_file):
+    return os.path.exists(input_file) or (
+        isinstance(input_file, str)
+        and (input_file.startswith("http://") or input_file.startswith("https://"))
+    )
 
 
 def get_output_path(output_dir):
@@ -66,6 +79,7 @@ def get_output_path(output_dir):
     if os.path.isabs(output_dir):
         return os.path.join(output_dir, today)
     from modules.paths_internal import data_path
+
     return os.path.join(data_path, output_dir, today)
 
 
@@ -80,34 +94,47 @@ def save_image_file(image: Image.Image, folder: str, base_filename: str):
 
 
 def process_image(
-        pipeline: BiRefNetPipeline,
-        image_input: str,
-        resolution: str,
-        return_foreground: bool,
-        return_mask: bool,
-        return_edge_mask: bool,
-        edge_mask_width: int,
-        output_dir: str,
-        save_output: bool,
-        send_output: bool,
-        default_output_filename: str
+    pipeline: BiRefNetPipeline,
+    image_input: str,
+    resolution: str,
+    return_foreground: bool,
+    return_mask: bool,
+    return_edge_mask: bool,
+    edge_mask_width: int,
+    output_dir: str,
+    save_output: bool,
+    send_output: bool,
+    default_output_filename: str,
 ):
     image = decode_to_pil(image_input)
     if image is None:
         raise ValueError("Input image is not optional")
 
-    mask, foreground, edge_mask = pipeline.process(image, resolution, return_mask, return_foreground, return_edge_mask, edge_mask_width)
+    mask, foreground, edge_mask = pipeline.process(
+        image.convert("RGB"),
+        resolution,
+        return_mask,
+        return_foreground,
+        return_edge_mask,
+        edge_mask_width,
+    )
 
     if save_output:
         output_folder = get_output_path(output_dir)
         os.makedirs(output_folder, exist_ok=True)
-        input_file_name = os.path.splitext(os.path.basename(image_input))[0] if is_file(image_input) else default_output_filename
+        input_file_name = (
+            os.path.splitext(os.path.basename(image_input))[0]
+            if is_file(image_input)
+            else default_output_filename
+        )
         if foreground:
             save_image_file(foreground, output_folder, f"{input_file_name}-foreground")
         if mask:
             save_image_file(mask, output_folder, f"{input_file_name}-foreground-mask")
         if edge_mask:
-            save_image_file(edge_mask, output_folder, f"{input_file_name}-foreground-edge-mask")
+            save_image_file(
+                edge_mask, output_folder, f"{input_file_name}-foreground-edge-mask"
+            )
 
     if send_output:
         mask_base64 = encode_to_base64(mask) if mask else None
@@ -130,27 +157,28 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
         return_mask: bool = True
         return_edge_mask: bool = True
         edge_mask_width: int = 64
-        output_dir: str = 'outputs/birefnet/'  # directory to save output image
+        output_dir: str = "outputs/birefnet/"  # directory to save output image
         device_id: int = 0  # gpu device id
         send_output: bool = True
         save_output: bool = False
         use_model_cache: bool = True
         flag_force_cpu: bool = False
 
-
     @app.post("/birefnet/single")
-    async def execute_birefnet_single(payload: BiRefNetSingleRequest = Body(...)) -> Any:
+    async def execute_birefnet_single(
+        payload: BiRefNetSingleRequest = Body(...),
+    ) -> Any:
         print("BiRefNet API /birefnet/single received request")
 
-        birefnet = get_pipeline_using_cache(
+        pipeline = get_pipeline_using_cache(
             payload.model_name,
             payload.device_id,
             payload.flag_force_cpu,
-            payload.use_model_cache
+            payload.use_model_cache,
         )
 
         mask_base64, output_image_base64, edge_mask_base64 = process_image(
-            birefnet,
+            pipeline,
             payload.image,
             payload.resolution,
             payload.return_foreground,
@@ -160,18 +188,20 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
             payload.output_dir,
             payload.save_output,
             payload.send_output,
-            "output"
+            "output",
         )
 
         print("BiRefNet API /birefnet/single finished")
 
-        return {"mask": mask_base64, "output_image": output_image_base64, "edge_mask": edge_mask_base64}
-
+        return {
+            "mask": mask_base64,
+            "output_image": output_image_base64,
+            "edge_mask": edge_mask_base64,
+        }
 
     class BiRefNetInput(BaseModel):
         image: str = ""
         resolution: str = ""
-
 
     class BiRefNetMultiRequest(BaseModel):
         inputs: list[BiRefNetInput]
@@ -180,7 +210,7 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
         return_mask: bool = True
         return_edge_mask: bool = True
         edge_mask_width: int = 64
-        output_dir: str = 'outputs/birefnet/'  # directory to save output image
+        output_dir: str = "outputs/birefnet/"  # directory to save output image
         device_id: int = 0  # gpu device id
         send_output: bool = True
         save_output: bool = False
@@ -194,21 +224,21 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
         if payload.inputs is None or len(payload.inputs) == 0:
             raise ValueError("Input images are not optional")
 
-        birefnet = get_pipeline_using_cache(
+        pipeline = get_pipeline_using_cache(
             payload.model_name,
             payload.device_id,
             payload.flag_force_cpu,
-            payload.use_model_cache
+            payload.use_model_cache,
         )
 
         count = 1
         outputs = []
-        for input in payload.inputs:
+        for payload_input in payload.inputs:
             try:
                 mask_base64, output_image_base64, edge_mask_base64 = process_image(
-                    birefnet,
-                    input.image,
-                    input.resolution,
+                    pipeline,
+                    payload_input.image,
+                    payload_input.resolution,
                     payload.return_foreground,
                     payload.return_mask,
                     payload.return_edge_mask,
@@ -216,11 +246,17 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
                     payload.output_dir,
                     payload.save_output,
                     payload.send_output,
-                    f"output_{count}"
+                    f"output_{count}",
                 )
 
                 if mask_base64:
-                    outputs.append({"mask": mask_base64, "output_image": output_image_base64, "edge_mask": edge_mask_base64})
+                    outputs.append(
+                        {
+                            "mask": mask_base64,
+                            "output_image": output_image_base64,
+                            "edge_mask": edge_mask_base64,
+                        }
+                    )
 
                 count += 1
             except Exception as e:
@@ -234,6 +270,7 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
 
 try:
     import modules.script_callbacks as script_callbacks
+
     script_callbacks.on_app_started(birefnet_api)
 except:
     print("BiRefNet API failed to initialize")
