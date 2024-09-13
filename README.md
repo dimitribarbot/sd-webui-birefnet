@@ -50,6 +50,7 @@ Both endpoints share these parameters:
 - `edge_mask_width`: edge mask width in pixels. Default to 64.
 - `model_name`: `General`, `General-Lite`, `Portrait`, `DIS`, `HRSOD`, `COD` or `DIS-TR_TEs`. BiRefNet model to be used. Default to `General`.
 - `output_dir`: directory to save output images.
+- `output_extension`: output image file extension (without leading dot, `png` by default).
 - `device_id`: GPU device id.
 - `send_output`: `true` if you want output images to be sent as base64 encoded strings, `false` otherwise.
 - `save_output`: `true` if you want output images to be saved in `output_dir`, `false` otherwise.

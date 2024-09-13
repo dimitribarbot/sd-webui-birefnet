@@ -83,12 +83,17 @@ def get_output_path(output_dir):
     return os.path.join(data_path, output_dir, today)
 
 
-def save_image_file(image: Image.Image, folder: str, base_filename: str):
-    output_path = os.path.join(folder, f"{base_filename}.png")
+def save_image_file(
+    image: Image.Image, folder: str, base_filename: str, extension: str
+):
+    if extension.lower() in ("jpg", "jpeg", "webp"):
+        image = image.convert("RGB")
+
+    output_path = os.path.join(folder, f"{base_filename}.{extension}")
 
     counter = 1
     while os.path.exists(output_path):
-        output_path = os.path.join(folder, f"{base_filename}_{counter}.png")
+        output_path = os.path.join(folder, f"{base_filename}_{counter}.{extension}")
         counter += 1
     image.save(output_path)
 
@@ -105,6 +110,7 @@ def process_image(
     save_output: bool,
     send_output: bool,
     default_output_filename: str,
+    output_extension: str,
 ):
     image = decode_to_pil(image_input)
     if image is None:
@@ -128,12 +134,25 @@ def process_image(
             else default_output_filename
         )
         if foreground:
-            save_image_file(foreground, output_folder, f"{input_file_name}-foreground")
+            save_image_file(
+                foreground,
+                output_folder,
+                f"{input_file_name}-foreground",
+                output_extension,
+            )
         if mask:
-            save_image_file(mask, output_folder, f"{input_file_name}-foreground-mask")
+            save_image_file(
+                mask,
+                output_folder,
+                f"{input_file_name}-foreground-mask",
+                output_extension,
+            )
         if edge_mask:
             save_image_file(
-                edge_mask, output_folder, f"{input_file_name}-foreground-edge-mask"
+                edge_mask,
+                output_folder,
+                f"{input_file_name}-foreground-edge-mask",
+                output_extension,
             )
 
     if send_output:
@@ -158,6 +177,7 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
         return_edge_mask: bool = True
         edge_mask_width: int = 64
         output_dir: str = "outputs/birefnet/"  # directory to save output image
+        output_extension: str = "png"
         device_id: int = 0  # gpu device id
         send_output: bool = True
         save_output: bool = False
@@ -189,6 +209,7 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
             payload.save_output,
             payload.send_output,
             "output",
+            payload.output_extension,
         )
 
         print("BiRefNet API /birefnet/single finished")
@@ -211,6 +232,7 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
         return_edge_mask: bool = True
         edge_mask_width: int = 64
         output_dir: str = "outputs/birefnet/"  # directory to save output image
+        output_extension: str = "png"
         device_id: int = 0  # gpu device id
         send_output: bool = True
         save_output: bool = False
@@ -247,6 +269,7 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
                     payload.save_output,
                     payload.send_output,
                     f"output_{count}",
+                    payload.output_extension,
                 )
 
                 if mask_base64:
