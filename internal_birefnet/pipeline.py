@@ -25,6 +25,7 @@ except:
 usage_to_weights_file = {
     "General": "BiRefNet",
     "General-Lite": "BiRefNet_T",
+    "General-Lite-2K": "BiRefNet_lite-2K",
     "Portrait": "BiRefNet-portrait",
     "DIS": "BiRefNet-DIS5K",
     "HRSOD": "BiRefNet-HRSOD",
@@ -33,7 +34,7 @@ usage_to_weights_file = {
 }
 
 BiRefNetModelName = Literal[
-    "General", "General-Lite", "Portrait", "DIS", "HRSOD", "COD", "DIS-TR_TEs"
+    "General", "General-Lite", "General-Lite-2K", "Portrait", "DIS", "HRSOD", "COD", "DIS-TR_TEs"
 ]
 
 
@@ -109,7 +110,7 @@ class BiRefNetPipeline(object):
 
         state_dict = safetensors.torch.load_file(weight_path, device=self.device)
 
-        bb_index = 3 if model_name == "General-Lite" else 6
+        bb_index = 3 if model_name == "General-Lite" or model_name == "General-Lite-2K" else 6
 
         self.birefnet = BiRefNet(bb_pretrained=False, bb_index=bb_index)
         self.birefnet.load_state_dict(state_dict)

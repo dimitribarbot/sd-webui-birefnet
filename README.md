@@ -21,6 +21,7 @@ The available models are:
 
 - General: A pre-trained model for general use cases.
 - General-Lite: A light pre-trained model for general use cases.
+- General-Lite-2K: A light pre-trained model for general use cases in high resolution (2560x1440).
 - Portrait: A pre-trained model for human portraits.
 - DIS: A pre-trained model for dichotomous image segmentation (DIS).
 - HRSOD: A pre-trained model for high-resolution salient object detection (HRSOD).
@@ -32,6 +33,7 @@ Model files go here (automatically downloaded if the folder is not present durin
 If necessary, they can be downloaded from:
 - [General](https://huggingface.co/ZhengPeng7/BiRefNet/resolve/main/model.safetensors) ➔ `model.safetensors` must be renamed `General.safetensors`
 - [General-Lite](https://huggingface.co/ZhengPeng7/BiRefNet_T/resolve/main/model.safetensors) ➔ `model.safetensors` must be renamed `General-Lite.safetensors`
+- [General-Lite-2K](https://huggingface.co/ZhengPeng7/BiRefNet_lite-2K/resolve/main/model.safetensors) ➔ `model.safetensors` must be renamed `General-Lite-2K.safetensors`
 - [Portrait](https://huggingface.co/ZhengPeng7/BiRefNet-portrait/resolve/main/model.safetensors) ➔ `model.safetensors` must be renamed `Portrait.safetensors`
 - [DIS](https://huggingface.co/ZhengPeng7/BiRefNet-DIS5K/resolve/main/model.safetensors) ➔ `model.safetensors` must be renamed `DIS.safetensors`
 - [HRSOD](https://huggingface.co/ZhengPeng7/BiRefNet-HRSOD/resolve/main/model.safetensors) ➔ `model.safetensors` must be renamed `HRSOD.safetensors`
@@ -48,7 +50,7 @@ Both endpoints share these parameters:
 - `return_mask`: whether to return mask (can be used for inpainting).
 - `return_edge_mask`: whether to return edge mask (can be used to blend foreground image with another background).
 - `edge_mask_width`: edge mask width in pixels. Default to 64.
-- `model_name`: `General`, `General-Lite`, `Portrait`, `DIS`, `HRSOD`, `COD` or `DIS-TR_TEs`. BiRefNet model to be used. Default to `General`.
+- `model_name`: `General`, `General-Lite`, `General-Lite-2K`, `Portrait`, `DIS`, `HRSOD`, `COD` or `DIS-TR_TEs`. BiRefNet model to be used. Default to `General`.
 - `output_dir`: directory to save output images.
 - `output_extension`: output image file extension (without leading dot, `png` by default).
 - `device_id`: GPU device id.

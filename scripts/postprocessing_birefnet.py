@@ -11,6 +11,7 @@ models = [
     "None",
     "General",
     "General-Lite",
+    "General-Lite-2K",
     "Portrait",
     "DIS",
     "HRSOD",
