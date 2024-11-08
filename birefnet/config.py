@@ -33,7 +33,7 @@ class Config():
         self.prompt4loc = ['dense', 'sparse'][0]
 
         # Faster-Training settings
-        self.load_all = False    # Turn it on/off by your case. It may consume a lot of CPU memory. And for multi-GPU (N), it would cost N times the CPU memory to load the data.
+        self.load_all = False   # Turn it on/off by your case. It may consume a lot of CPU memory. And for multi-GPU (N), it would cost N times the CPU memory to load the data.
         self.use_fp16 = False   # It may cause nan in training.
         self.compile = True and (not self.use_fp16)     # 1. Trigger CPU memory leak in some extend, which is an inherent problem of PyTorch.
                                                         #   Machines with > 70GB CPU memory can run the whole training on DIS5K with default setting.
@@ -100,6 +100,7 @@ class Config():
         self.freeze_bb = False
         self.model = [
             'BiRefNet',
+            'BiRefNetC2F',
         ][0]
 
         # TRAINING settings - inactive
@@ -190,12 +191,14 @@ class Config():
 # Return task for choosing settings in shell scripts.
 if __name__ == '__main__':
     import argparse
+
+
     parser = argparse.ArgumentParser(description='Only choose one argument to activate.')
     parser.add_argument('--print_task', action='store_true', help='print task name')
     parser.add_argument('--print_testsets', action='store_true', help='print validation set')
     args = parser.parse_args()
+
     config = Config()
     for arg_name, arg_value in args._get_kwargs():
         if arg_value:
             print(config.__getattribute__(arg_name[len('print_'):]))
-    

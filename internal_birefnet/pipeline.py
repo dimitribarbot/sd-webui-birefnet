@@ -6,7 +6,7 @@ from PIL import Image
 from torchvision import transforms
 from scipy.ndimage import binary_dilation, binary_erosion
 import numpy as np
-import safetensors.torch
+from safetensors.torch import load_file
 
 from modules.modelloader import load_file_from_url
 
@@ -109,7 +109,7 @@ class BiRefNetPipeline(object):
 
         weight_path = get_model_path(self.model_name)
 
-        state_dict = safetensors.torch.load_file(weight_path, device=self.device)
+        state_dict = load_file(weight_path, device=self.device)
 
         bb_index = 3 if model_name == "General-Lite" or model_name == "General-Lite-2K" else 6
 

@@ -2,3 +2,4 @@ numpy<2
 opencv-python
 scipy
 timm
+einops
