@@ -87,10 +87,12 @@ class BiRefNetPipeline(object):
         model_name: BiRefNetModelName = "General",
         device_id: int = 0,
         flag_force_cpu: bool = False,
+        use_fp16: bool = True,
     ):
         self.model_name = model_name
         self.device_id = device_id
         self.flag_force_cpu = flag_force_cpu
+        self.use_fp16 = use_fp16
 
         if self.flag_force_cpu:
             self.device = "cpu"
@@ -117,6 +119,8 @@ class BiRefNetPipeline(object):
         self.birefnet.load_state_dict(state_dict)
         self.birefnet.to(self.device)
         self.birefnet.eval()
+        if self.use_fp16:
+            self.birefnet.half()
 
     def dilate_mask(self, mask, dilation_amt: int):
         dilation_amt_abs = abs(dilation_amt)
@@ -166,6 +170,8 @@ class BiRefNetPipeline(object):
         image_preprocessor = ImagePreprocessor()
         image_proc = image_preprocessor.proc(image_pil)
         image_proc = image_proc.unsqueeze(0)
+        if self.use_fp16:
+            image_proc = image_proc.half()
 
         with torch.no_grad():
             scaled_pred_tensor = self.birefnet(image_proc.to(self.device))[-1].sigmoid()

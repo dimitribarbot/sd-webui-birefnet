@@ -23,12 +23,12 @@ models = [
 birefnet: Optional[BiRefNetPipeline] = None
 
 
-def get_pipeline_using_cache(model_name: BiRefNetModelName):
+def get_pipeline_using_cache(model_name: BiRefNetModelName, use_fp16: bool):
     global birefnet
-    if not birefnet or birefnet.model_name != model_name:
+    if not birefnet or birefnet.model_name != model_name or birefnet.use_fp16 != use_fp16:
         birefnet = None
         torch_gc()
-        birefnet = BiRefNetPipeline(model_name)
+        birefnet = BiRefNetPipeline(model_name, use_fp16=use_fp16)
     return birefnet
 
 
@@ -54,6 +54,7 @@ class ScriptPostprocessingBiRefNet(scripts_postprocessing.ScriptPostprocessing):
                     placeholder="1024x1024",
                     info="If left empty, it will take image size rounded to the nearest multiple of 32.",
                 )
+                use_fp16 = gr.Checkbox(True, label="Use FP16")
 
             with ui_components.FormRow():
                 return_original = gr.Checkbox(label="Return original image")
@@ -81,6 +82,7 @@ class ScriptPostprocessingBiRefNet(scripts_postprocessing.ScriptPostprocessing):
             "return_mask": return_mask,
             "return_edge_mask": return_edge_mask,
             "edge_mask_width": edge_mask_width,
+            "use_fp16": use_fp16
         }
 
     def process(
@@ -94,6 +96,7 @@ class ScriptPostprocessingBiRefNet(scripts_postprocessing.ScriptPostprocessing):
         return_mask,
         return_edge_mask,
         edge_mask_width,
+        use_fp16,
     ):
         if not enable:
             return
@@ -101,7 +104,7 @@ class ScriptPostprocessingBiRefNet(scripts_postprocessing.ScriptPostprocessing):
         if not model or model == "None":
             return
 
-        pipeline = get_pipeline_using_cache(model)
+        pipeline = get_pipeline_using_cache(model, use_fp16)
 
         mask, foreground, edge_mask = pipeline.process(
             pp.image.convert("RGB"),

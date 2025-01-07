@@ -51,6 +51,7 @@ def get_pipeline_using_cache(
     device_id: int,
     flag_force_cpu: bool,
     use_model_cache: bool,
+    use_fp16: bool,
 ):
     global birefnet
     if not use_model_cache:
@@ -61,9 +62,10 @@ def get_pipeline_using_cache(
         or birefnet.model_name != model_name
         or birefnet.device_id != device_id
         or birefnet.flag_force_cpu != flag_force_cpu
+        or birefnet.use_fp16 != use_fp16
     ):
         clear_model_cache()
-        birefnet = BiRefNetPipeline(model_name, device_id, flag_force_cpu)
+        birefnet = BiRefNetPipeline(model_name, device_id, flag_force_cpu, use_fp16)
     return birefnet
 
 
@@ -183,6 +185,7 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
         save_output: bool = False
         use_model_cache: bool = True
         flag_force_cpu: bool = False
+        use_fp16: bool = True
 
     @app.post("/birefnet/single")
     async def execute_birefnet_single(
@@ -195,6 +198,7 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
             payload.device_id,
             payload.flag_force_cpu,
             payload.use_model_cache,
+            payload.use_fp16,
         )
 
         mask_base64, output_image_base64, edge_mask_base64 = process_image(
@@ -238,6 +242,7 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
         save_output: bool = False
         use_model_cache: bool = True
         flag_force_cpu: bool = False
+        use_fp16: bool = True
 
     @app.post("/birefnet/multi")
     async def execute_birefnet_multi(payload: BiRefNetMultiRequest = Body(...)) -> Any:
@@ -251,6 +256,7 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
             payload.device_id,
             payload.flag_force_cpu,
             payload.use_model_cache,
+            payload.use_fp16
         )
 
         count = 1
