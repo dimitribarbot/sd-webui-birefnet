@@ -170,9 +170,7 @@ def process_image(
 
 
 def birefnet_api(_: gr.Blocks, app: FastAPI):
-    class BiRefNetSingleRequest(BaseModel):
-        image: str = ""
-        resolution: str = ""
+    class BiRefNetCommonRequest(BaseModel):
         model_name: BiRefNetModelName
         return_foreground: bool = True
         return_mask: bool = True
@@ -186,6 +184,10 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
         use_model_cache: bool = True
         flag_force_cpu: bool = False
         use_fp16: bool = True
+
+    class BiRefNetSingleRequest(BiRefNetCommonRequest):
+        image: str = ""
+        resolution: str = ""
 
     @app.post("/birefnet/single")
     async def execute_birefnet_single(
@@ -228,21 +230,8 @@ def birefnet_api(_: gr.Blocks, app: FastAPI):
         image: str = ""
         resolution: str = ""
 
-    class BiRefNetMultiRequest(BaseModel):
+    class BiRefNetMultiRequest(BiRefNetCommonRequest):
         inputs: list[BiRefNetInput]
-        model_name: BiRefNetModelName
-        return_foreground: bool = True
-        return_mask: bool = True
-        return_edge_mask: bool = True
-        edge_mask_width: int = 64
-        output_dir: str = "outputs/birefnet/"  # directory to save output image
-        output_extension: str = "png"
-        device_id: int = 0  # gpu device id
-        send_output: bool = True
-        save_output: bool = False
-        use_model_cache: bool = True
-        flag_force_cpu: bool = False
-        use_fp16: bool = True
 
     @app.post("/birefnet/multi")
     async def execute_birefnet_multi(payload: BiRefNetMultiRequest = Body(...)) -> Any:

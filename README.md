@@ -45,7 +45,7 @@ If necessary, they can be downloaded from:
 ## API
 Routes have been added to the Automatic1111's SD WebUI API:
 - `/birefnet/single`: remove background of a single image.
-- `/birefnet/multi`: remove background of a multiple images.
+- `/birefnet/multi`: remove background of multiple images.
 
 Both endpoints share these parameters:
 - `return_foreground`: whether to return foreground image (input image without its background).
@@ -60,6 +60,7 @@ Both endpoints share these parameters:
 - `save_output`: `true` if you want output images to be saved in `output_dir`, `false` otherwise.
 - `use_model_cache`: `true` if you want BiRefNet model to be cached for subsequent calls using same model name, `false` otherwise.
 - `flag_force_cpu`: force cpu inference.
+- `use_fp16`: use model in fp16 mode (if `false`, default to fp32).
 
 Additional parameters for the `/birefnet/single` endpoint are:
 - `image`: source image. It can either be a path to an existing file or an url or a base64 encoded string.
