@@ -56,7 +56,7 @@ def get_pipeline_using_cache(
     global birefnet
     if not use_model_cache:
         clear_model_cache()
-        return BiRefNetPipeline(model_name, device_id, flag_force_cpu)
+        return BiRefNetPipeline(model_name, device_id, flag_force_cpu, use_fp16)
     if (
         not birefnet
         or birefnet.model_name != model_name
