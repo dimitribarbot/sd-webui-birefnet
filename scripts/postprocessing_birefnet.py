@@ -10,6 +10,7 @@ from internal_birefnet.pipeline import BiRefNetPipeline, BiRefNetModelName
 models = [
     "None",
     "General",
+    "General-HR",
     "General-Lite",
     "General-Lite-2K",
     "Portrait",

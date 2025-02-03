@@ -24,6 +24,7 @@ except:
 
 usage_to_weights_file = {
     "General": "BiRefNet",
+    "General-HR": "BiRefNet_HR",
     "General-Lite": "BiRefNet_T",
     "General-Lite-2K": "BiRefNet_lite-2K",
     "Portrait": "BiRefNet-portrait",
@@ -35,7 +36,7 @@ usage_to_weights_file = {
 }
 
 BiRefNetModelName = Literal[
-    "General", "General-Lite", "General-Lite-2K", "Portrait", "Matting", "DIS", "HRSOD", "COD", "DIS-TR_TEs"
+    "General", "General-HR", "General-Lite", "General-Lite-2K", "Portrait", "Matting", "DIS", "HRSOD", "COD", "DIS-TR_TEs"
 ]
 
 
