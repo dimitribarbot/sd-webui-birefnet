@@ -29,6 +29,7 @@ usage_to_weights_file = {
     "General-Lite-2K": "BiRefNet_lite-2K",
     "Portrait": "BiRefNet-portrait",
     "Matting": "BiRefNet-matting",
+    "Matting-HR": "BiRefNet_HR-matting",
     "DIS": "BiRefNet-DIS5K",
     "HRSOD": "BiRefNet-HRSOD",
     "COD": "BiRefNet-COD",
@@ -36,7 +37,7 @@ usage_to_weights_file = {
 }
 
 BiRefNetModelName = Literal[
-    "General", "General-HR", "General-Lite", "General-Lite-2K", "Portrait", "Matting", "DIS", "HRSOD", "COD", "DIS-TR_TEs"
+    "General", "General-HR", "General-Lite", "General-Lite-2K", "Portrait", "Matting", "Matting-HR", "DIS", "HRSOD", "COD", "DIS-TR_TEs"
 ]
 
 

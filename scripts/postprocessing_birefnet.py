@@ -15,6 +15,7 @@ models = [
     "General-Lite-2K",
     "Portrait",
     "Matting",
+    "Matting-HR",
     "DIS",
     "HRSOD",
     "COD",
