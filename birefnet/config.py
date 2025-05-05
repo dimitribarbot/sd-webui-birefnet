@@ -6,7 +6,7 @@ class Config():
     def __init__(self, bb_index: int = 6) -> None:
         # PATH settings
         # Make up your file system as: SYS_HOME_DIR/codes/dis/BiRefNet, SYS_HOME_DIR/datasets/dis/xx, SYS_HOME_DIR/weights/xx
-        # self.sys_home_dir = [os.path.expanduser('~'), '/mnt/data'][0] # Default, custom
+        # self.sys_home_dir = [os.path.expanduser('~'), '/workspace'][1]   # Default, custom
         # self.data_root_dir = os.path.join(self.sys_home_dir, 'datasets/dis')
 
         # TASK settings
@@ -65,7 +65,7 @@ class Config():
                 'HRSOD': -20,
                 'General': -20,
                 'General-2K': -20,
-                'Matting': -20,
+                'Matting': -10,
             }[self.task]
         ][1]    # choose 0 to skip
         self.lr = (1e-4 if 'DIS5K' in self.task else 1e-5) * math.sqrt(self.batch_size / 4)     # DIS needs high lr to converge faster. Adapt the lr linearly
@@ -80,7 +80,7 @@ class Config():
             'pvt_v2_b2', 'pvt_v2_b5',               # 9-bs10, 10-bs5
         ][bb_index]
         self.lateral_channels_in_collection = {
-            'vgg16': [512, 256, 128, 64], 'vgg16bn': [512, 256, 128, 64], 'resnet50': [1024, 512, 256, 64],
+            'vgg16': [512, 512, 256, 128], 'vgg16bn': [512, 512, 256, 128], 'resnet50': [2048, 1024, 512, 256],
             'pvt_v2_b2': [512, 320, 128, 64], 'pvt_v2_b5': [512, 320, 128, 64],
             'swin_v1_b': [1024, 512, 256, 128], 'swin_v1_l': [1536, 768, 384, 192],
             'swin_v1_t': [768, 384, 192, 96], 'swin_v1_s': [768, 384, 192, 96],

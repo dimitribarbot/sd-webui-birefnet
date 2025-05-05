@@ -26,6 +26,9 @@ The available models are:
 - Portrait: A pre-trained model for human portraits.
 - Matting: A pre-trained model for general trimap-free matting use.
 - Matting-HR: A pre-trained model for general matting use which shows great matting performance on higher resolution images.
+- Matting-Lite: A light pre-trained model for general trimap-free matting use.
+- Anime-Lite: A light pre-trained model focused on anime use cases.
+- Dynamic: A pre-trained model for dynamic resolution, trained with height and width both in range from 512-256 to 2048+256.
 - DIS: A pre-trained model for dichotomous image segmentation (DIS).
 - HRSOD: A pre-trained model for high-resolution salient object detection (HRSOD).
 - COD: A pre-trained model for concealed object detection (COD).
@@ -41,6 +44,9 @@ If necessary, they can be downloaded from:
 - [Portrait](https://huggingface.co/ZhengPeng7/BiRefNet-portrait/resolve/main/model.safetensors) ➔ `model.safetensors` must be renamed `Portrait.safetensors`
 - [Matting](https://huggingface.co/ZhengPeng7/BiRefNet-matting/resolve/main/model.safetensors) ➔ `model.safetensors` must be renamed `Matting.safetensors`
 - [Matting-HR](https://huggingface.co/ZhengPeng7/BiRefNet_HR-matting/resolve/main/model.safetensors) ➔ `model.safetensors` must be renamed `Matting.safetensors`
+- [Matting-Lite](https://huggingface.co/ZhengPeng7/BiRefNet_lite-matting/resolve/main/model.safetensors) ➔ `model.safetensors` must be renamed `Matting-Lite.safetensors`
+- [Anime-Lite](https://huggingface.co/ZhengPeng7/BiRefNet_lite-anime/resolve/main/model.safetensors) ➔ `model.safetensors` must be renamed `Anime-Lite.safetensors`
+- [Dynamic](https://huggingface.co/ZhengPeng7/BiRefNet_dynamic/resolve/main/model.safetensors) ➔ `model.safetensors` must be renamed `Dynamic.safetensors`
 - [DIS](https://huggingface.co/ZhengPeng7/BiRefNet-DIS5K/resolve/main/model.safetensors) ➔ `model.safetensors` must be renamed `DIS.safetensors`
 - [HRSOD](https://huggingface.co/ZhengPeng7/BiRefNet-HRSOD/resolve/main/model.safetensors) ➔ `model.safetensors` must be renamed `HRSOD.safetensors`
 - [COD](https://huggingface.co/ZhengPeng7/BiRefNet-COD/resolve/main/model.safetensors) ➔ `model.safetensors` must be renamed `COD.safetensors`
@@ -56,7 +62,7 @@ Both endpoints share these parameters:
 - `return_mask`: whether to return mask (can be used for inpainting).
 - `return_edge_mask`: whether to return edge mask (can be used to blend foreground image with another background).
 - `edge_mask_width`: edge mask width in pixels. Default to 64.
-- `model_name`: `General`, `General-HR`, `General-Lite`, `General-Lite-2K`, `Portrait`, `Matting`, `Matting-HR`, `DIS`, `HRSOD`, `COD` or `DIS-TR_TEs`. BiRefNet model to be used. Default to `General`.
+- `model_name`: `General`, `General-HR`, `General-Lite`, `General-Lite-2K`, `Portrait`, `Matting`, `Matting-HR`, `Matting-Lite`, `Anime-Lite`, `Dynamic`, `DIS`, `HRSOD`, `COD` or `DIS-TR_TEs`. BiRefNet model to be used. Default to `General`.
 - `output_dir`: directory to save output images.
 - `output_extension`: output image file extension (without leading dot, `png` by default).
 - `device_id`: GPU device id.

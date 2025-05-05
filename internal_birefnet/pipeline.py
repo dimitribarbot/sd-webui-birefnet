@@ -30,6 +30,9 @@ usage_to_weights_file = {
     "Portrait": "BiRefNet-portrait",
     "Matting": "BiRefNet-matting",
     "Matting-HR": "BiRefNet_HR-matting",
+    "Matting-Lite": "BiRefNet_lite-matting",
+    "Anime-Lite": "BiRefNet_lite-anime",
+    "Dynamic": "BiRefNet_dynamic",
     "DIS": "BiRefNet-DIS5K",
     "HRSOD": "BiRefNet-HRSOD",
     "COD": "BiRefNet-COD",
@@ -37,7 +40,20 @@ usage_to_weights_file = {
 }
 
 BiRefNetModelName = Literal[
-    "General", "General-HR", "General-Lite", "General-Lite-2K", "Portrait", "Matting", "Matting-HR", "DIS", "HRSOD", "COD", "DIS-TR_TEs"
+    "General",
+    "General-HR",
+    "General-Lite",
+    "General-Lite-2K",
+    "Portrait",
+    "Matting",
+    "Matting-HR",
+    "Matting-Lite",
+    "Anime-Lite",
+    "Dynamic",
+    "DIS",
+    "HRSOD",
+    "COD",
+    "DIS-TR_TEs",
 ]
 
 
@@ -115,7 +131,7 @@ class BiRefNetPipeline(object):
 
         state_dict = load_file(weight_path, device=self.device)
 
-        bb_index = 3 if model_name == "General-Lite" or model_name == "General-Lite-2K" else 6
+        bb_index = 3 if "Lite" in model_name else 6
 
         self.birefnet = BiRefNet(bb_pretrained=False, bb_index=bb_index)
         self.birefnet.load_state_dict(state_dict)
